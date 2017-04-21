@@ -112,4 +112,6 @@
 - (void)resetSessionCallbackParametersI:(ADJActivityHandler *)selfI;
 - (void)resetSessionPartnerParametersI:(ADJActivityHandler *)selfI;
 
++ (void)deleteState;
+
 @end

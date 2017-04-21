@@ -1258,6 +1258,15 @@ remainsPausedMessage:(NSString *)remainsPausedMessage
     }
 }
 
+#pragma mark - static
+
++ (void)deleteState {
+    [ADJUtil deleteFileWithName:kActivityStateFilename];
+    [ADJUtil deleteFileWithName:kAttributionFilename];
+    [ADJUtil deleteFileWithName:kSessionCallbackParametersFilename];
+    [ADJUtil deleteFileWithName:kSessionPartnerParametersFilename];
+}
+
 #pragma mark - private
 
 - (BOOL)isEnabledI:(ADJActivityHandler *)selfI {
