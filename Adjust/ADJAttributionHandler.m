@@ -182,7 +182,7 @@ attributionResponseData:(ADJAttributionResponseData *)attributionResponseData {
     }
     [selfI.logger verbose:@"%@", selfI.attributionPackage.extendedString];
 
-    [ADJUtil sendGetRequest:[NSURL URLWithString:ADJUtil.baseUrl]
+    [ADJUtil sendGetRequest:[NSURL URLWithString:ADJAdjustFactory.baseUrl]
          prefixErrorMessage:@"Failed to get attribution"
             activityPackage:selfI.attributionPackage
         responseDataHandler:^(ADJResponseData * responseData)
