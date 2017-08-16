@@ -648,7 +648,7 @@ responseDataHandler:(void (^)(ADJResponseData *responseData))responseDataHandler
 + (NSMutableURLRequest *)requestForPostPackage:(ADJActivityPackage *)activityPackage
                                        baseUrl:(NSURL *)baseUrl
                                      queueSize:(NSUInteger)queueSize {
-    NSURL *url = [NSURL URLWithString:activityPackage.path relativeToURL:baseUrl];
+    NSURL *url = [baseUrl URLByAppendingPathComponent:activityPackage.path];
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
     request.timeoutInterval = kRequestTimeout;
     request.HTTPMethod = @"POST";

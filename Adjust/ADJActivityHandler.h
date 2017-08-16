@@ -89,6 +89,7 @@
 - (void)removeSessionPartnerParameter:(NSString *)key;
 - (void)resetSessionCallbackParameters;
 - (void)resetSessionPartnerParameters;
+- (NSString *)getBasePath;
 
 - (void)teardown:(BOOL)deleteState;
 @end
