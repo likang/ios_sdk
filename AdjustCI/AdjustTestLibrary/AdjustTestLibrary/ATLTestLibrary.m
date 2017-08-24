@@ -13,13 +13,16 @@
 #import "MKBlockingQueue.h"
 #import "ATLControlChannel.h"
 
-static const char * const kInternalQueueName     = "com.adjust.TestLibrary";
+//static const char * const kInternalQueueName     = "com.adjust.TestLibrary";
 
 @interface ATLTestLibrary()
 
 @property (nonatomic, weak, nullable) NSObject<AdjustCommandDelegate> *commandDelegate;
-@property (nonatomic, strong) dispatch_queue_t internalQueue;
+//@property (nonatomic, strong) dispatch_queue_t internalQueue;
+@property (nonatomic, strong) NSOperationQueue* operationQueue;
+
 @property (nonatomic, copy) NSString *currentBasePath;
+//@property (nonatomic, copy) NSString *baseUrl;
 @property (nonatomic, strong) MKBlockingQueue *waitControlQueue;
 @property (nonatomic, strong) ATLControlChannel *controlChannel;
 
@@ -33,41 +36,52 @@ static NSURL * _baseUrl = nil;
     return _baseUrl;
 }
 
-- (id)initWithBaseUrl:(NSURL *)baseUrl
++ (ATLTestLibrary *)testLibraryWithBaseUrl:(NSString *)baseUrl
+                        andCommandDelegate:(NSObject<AdjustCommandDelegate> *)commandDelegate {
+    return [[ATLTestLibrary alloc] initWithBaseUrl:baseUrl
+                                andCommandDelegate:commandDelegate];
+}
+- (id)initWithBaseUrl:(NSString *)baseUrl
    andCommandDelegate:(NSObject<AdjustCommandDelegate> *)commandDelegate;
 {
     self = [super init];
     if (self == nil) return nil;
     
-    _baseUrl = baseUrl;
+    _baseUrl = [NSURL URLWithString:baseUrl];
+    //self.baseUrl = baseUrl;
     self.commandDelegate = commandDelegate;
     
     return self;
 }
 
-- (void)initTestSession:(NSString *)clientSdk {
+- (void)startTestSession:(NSString *)clientSdk {
     [self resetTestLibrary];
 
+    [ATLUtil addOperationAfterLast:self.operationQueue
+                             block:^{
+                                 [self sendTestSessionI:clientSdk];
+                             }];
+/*
     [ATLUtil launchInQueue:self.internalQueue
                  selfInject:self
                       block:^(ATLTestLibrary * selfI) {
                           [selfI sendTestSessionI:clientSdk];
                       }];
-    
+*/
 }
 
 - (void)resetTestLibrary {
     [self teardown];
 
-    [self initTest];
+    [self initTestLibrary];
 }
 
 - (void)teardown {
-    if (self.internalQueue != nil) {
+    if (self.operationQueue != nil) {
         [ATLUtil debug:@"cancel test library thread queue"];
-        dispatch_cancel(self.internalQueue);
+        [self.operationQueue cancelAllOperations];
     }
-    self.internalQueue = nil;
+    self.operationQueue = nil;
 
     [self clearTest];
 }
@@ -80,6 +94,13 @@ static NSURL * _baseUrl = nil;
     self.controlChannel = nil;
 }
 
+- (void) initTestLibrary {
+    self.waitControlQueue = [[MKBlockingQueue alloc] init];
+
+    self.operationQueue = [[NSOperationQueue alloc] init];
+    [self.operationQueue setMaxConcurrentOperationCount:1];
+}
+
 - (void)resetTest {
     [self clearTest];
 
@@ -88,11 +109,12 @@ static NSURL * _baseUrl = nil;
 
 - (void)initTest {
     self.waitControlQueue = [[MKBlockingQueue alloc] init];
-    self.internalQueue = dispatch_queue_create(kInternalQueueName, DISPATCH_QUEUE_SERIAL);
+    self.controlChannel = [[ATLControlChannel alloc] initWithTestLibrary:self];
 }
 
 - (void)sendTestSessionI:(NSString *)clientSdk {
     ATLHttpRequest * requestData = [[ATLHttpRequest alloc] init];
+
     requestData.headerFields = @{@"Client-SDK": clientSdk};
     requestData.path = @"/init_session";
     
@@ -103,16 +125,19 @@ static NSURL * _baseUrl = nil;
 }
 
 - (void)readHeaders:(ATLHttpResponse *)httpResponse {
+    [ATLUtil addOperationAfterLast:self.operationQueue
+                             block:^{
+                                 [self readHeadersI:httpResponse];
+                             }];
+    /*
     [ATLUtil launchInQueue:self.internalQueue
                 selfInject:self
                      block:^(ATLTestLibrary * selfI) {
                          [selfI readHeadersI:httpResponse];
                      }];
+     */
 }
 - (void)readHeadersI:(ATLHttpResponse *)httpResponse {
-    [ATLUtil debug:@"readHeadersI"];
-    return;
-
     if (httpResponse.headerFields == nil) {
         [ATLUtil debug:@"headers null"];
         return;
@@ -131,20 +156,14 @@ static NSURL * _baseUrl = nil;
         [ATLUtil debug:@"current test is %@", currentTest];
 
         [self resetTest];
-        // TODO add control channel
-        /*
-         if (controlChannel != null) {
-         controlChannel.teardown();
-         }
-         controlChannel = new ControlChannel(this);
-         */
-        // List<TestCommand> testCommands = Arrays.asList(gson.fromJson(httpResponse.response, TestCommand[].class));
-        [self execTestCommandsI:httpResponse.jsonResponse];
+
+        //[self execTestCommandsI:httpResponse.jsonResponse];
+        [self execTestCommandsI:httpResponse.jsonFoundation];
     }
 }
 
-- (void)execTestCommandsI:(NSDictionary *)jsonResponse {
-    [ATLUtil debug:@"execTestCommands"];
+- (void)execTestCommandsI:(id)jsonFoundation {
+    [ATLUtil debug:@"execTestCommands, jsonFoundation: %@", jsonFoundation];
 }
 
 @end
