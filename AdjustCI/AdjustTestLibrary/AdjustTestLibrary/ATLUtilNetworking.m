@@ -33,14 +33,21 @@ static NSURLSessionConfiguration *urlSessionConfiguration = nil;
     urlSessionConfiguration = [NSURLSessionConfiguration defaultSessionConfiguration];
 }
 
++ (NSString *)appendBasePath:(NSString *)basePath
+                        path:(NSString *)path {
+    if (basePath == nil) {
+        return path;
+    }
+    return [NSString stringWithFormat:@"%@%@", basePath, path];
+}
+
 + (void)sendPostRequest:(ATLHttpRequest *)requestData
-    responseHandler:(httpResponseHandler) responseHandler
+        responseHandler:(httpResponseHandler)responseHandler
 {
-    NSMutableURLRequest *request =
-    [ATLUtilNetworking requestForPackage:requestData];
+    NSMutableURLRequest *request = [ATLUtilNetworking requestForPackage:requestData];
     
     [ATLUtilNetworking sendRequest:request
-     responseHandler:responseHandler];
+                   responseHandler:responseHandler];
 }
 
 + (NSMutableURLRequest *)requestForPackage:(ATLHttpRequest *)requestData
@@ -145,8 +152,8 @@ static NSURLSessionConfiguration *urlSessionConfiguration = nil;
 
     httpResponseData.statusCode = urlResponse.statusCode;
 
-    NSDictionary * headerFields = urlResponse.allHeaderFields;
-    [ATLUtil debug:@"header fields: %@", headerFields];
+    httpResponseData.headerFields = urlResponse.allHeaderFields;
+    [ATLUtil debug:@"header fields: %@", httpResponseData.headerFields];
 
     httpResponseData.jsonFoundation = [ATLUtilNetworking saveJsonResponse:data];
     [ATLUtil debug:@"json response: %@", httpResponseData.jsonFoundation];

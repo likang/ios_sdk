@@ -7,6 +7,8 @@
 //
 
 #import <Foundation/Foundation.h>
+#import "ATLUtilNetworking.h"
+#import "MKBlockingQueue.h"
 
 @protocol AdjustCommandDelegate <NSObject>
 @optional
@@ -21,13 +23,22 @@
 
 @interface ATLTestLibrary : NSObject
 
-+ (NSURL *)baseUrl;
-
 - (id)initWithBaseUrl:(NSString *)baseUrl
    andCommandDelegate:(NSObject<AdjustCommandDelegate> *)commandDelegate;
 
+- (void)setTests:(NSString *)testNames;
+
 - (void)startTestSession:(NSString *)clientSdk;
+
+- (NSString *)currentBasePath;
+- (MKBlockingQueue *)waitControlQueue;
+
+- (void)resetTestLibrary;
+
+- (void)readHeaders:(ATLHttpResponse *)httpResponse;
 
 + (ATLTestLibrary *)testLibraryWithBaseUrl:(NSString *)baseUrl
 andCommandDelegate:(NSObject<AdjustCommandDelegate> *)commandDelegate;
+
++ (NSURL *)baseUrl;
 @end

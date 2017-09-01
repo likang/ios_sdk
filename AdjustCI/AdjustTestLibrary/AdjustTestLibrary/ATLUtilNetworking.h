@@ -12,7 +12,7 @@
 
 @property (nonatomic, copy) NSString *responseString;
 @property (nonatomic, strong) id jsonFoundation;
-@property (nonatomic, strong) NSDictionary<NSString*, NSArray*> *headerFields;
+@property (nonatomic, strong) NSDictionary *headerFields;
 @property (nonatomic, assign) NSInteger statusCode;
 
 @end
@@ -32,4 +32,6 @@ typedef void (^httpResponseHandler)(ATLHttpResponse* httpResponse);
 + (void)sendPostRequest:(ATLHttpRequest *)requestData
         responseHandler:(httpResponseHandler) responseHandler;
 
++ (NSString *)appendBasePath:(NSString *)basePath
+                        path:(NSString *)path;
 @end

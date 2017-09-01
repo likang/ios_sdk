@@ -8,9 +8,7 @@
 
 #import "ATLTestLibrary.h"
 #import "ATLUtil.h"
-#import "ATLUtilNetworking.h"
 #import "ATLConstants.h"
-#import "MKBlockingQueue.h"
 #import "ATLControlChannel.h"
 
 //static const char * const kInternalQueueName     = "com.adjust.TestLibrary";
@@ -25,6 +23,7 @@
 //@property (nonatomic, copy) NSString *baseUrl;
 @property (nonatomic, strong) MKBlockingQueue *waitControlQueue;
 @property (nonatomic, strong) ATLControlChannel *controlChannel;
+@property (nonatomic, copy) NSString *testNames;
 
 @end
 
@@ -52,6 +51,10 @@ static NSURL * _baseUrl = nil;
     self.commandDelegate = commandDelegate;
     
     return self;
+}
+
+- (void)setTests:(NSString *)testNames {
+    self.testNames = testNames;
 }
 
 - (void)startTestSession:(NSString *)clientSdk {
@@ -115,7 +118,13 @@ static NSURL * _baseUrl = nil;
 - (void)sendTestSessionI:(NSString *)clientSdk {
     ATLHttpRequest * requestData = [[ATLHttpRequest alloc] init];
 
-    requestData.headerFields = @{@"Client-SDK": clientSdk};
+    NSMutableDictionary * headerFields = [NSMutableDictionary dictionaryWithObjectsAndKeys:clientSdk, @"Client-SDK", nil];
+
+    if (self.testNames != nil) {
+        [headerFields setObject:self.testNames forKey:@"Test-Names"];
+    }
+
+    requestData.headerFields = headerFields;
     requestData.path = @"/init_session";
     
     [ATLUtilNetworking sendPostRequest:requestData
@@ -149,10 +158,10 @@ static NSURL * _baseUrl = nil;
         return;
     }
     if ([httpResponse.headerFields objectForKey:BASE_PATH_HEADER]) {
-        self.currentBasePath = httpResponse.headerFields[BASE_PATH_HEADER][0];
+        self.currentBasePath = httpResponse.headerFields[BASE_PATH_HEADER];
     }
     if ([httpResponse.headerFields objectForKey:TEST_SCRIPT_HEADER]) {
-        NSString * currentTest = httpResponse.headerFields[TEST_SCRIPT_HEADER][0];
+        NSString * currentTest = httpResponse.headerFields[TEST_SCRIPT_HEADER];
         [ATLUtil debug:@"current test is %@", currentTest];
 
         [self resetTest];
@@ -180,7 +189,7 @@ static NSURL * _baseUrl = nil;
 
         // check for test library commands
         if ([className isEqualToString:TEST_LIBRARY_CLASSNAME]) {
-            [self execTestLibraryCommand:functionName params:params];
+            [self execTestLibraryCommandI:functionName params:params];
 
             NSDate *timeAfter = [NSDate date];
             [ATLUtil debug:@"time after %@", [ATLUtil formatDate:timeAfter]];
@@ -211,9 +220,41 @@ static NSURL * _baseUrl = nil;
     }
 }
 
-- (void)execTestLibraryCommand:(NSString *)functionName
-                        params:(NSDictionary *)params {
+- (void)execTestLibraryCommandI:(NSString *)functionName
+                         params:(NSDictionary *)params {
+    if ([functionName isEqualToString:@"end_test"]) {
+        [self endTestI:params];
+    } else if ([functionName isEqualToString:@"wait"]) {
+        [self waitI:params];
+    }
 }
 
+- (void)endTestI:(NSDictionary *)params {
+    ATLHttpRequest * requestData = [[ATLHttpRequest alloc] init];
+    requestData.path = [ATLUtilNetworking appendBasePath:self.currentBasePath path:@"/end_test"];
 
+    [ATLUtilNetworking sendPostRequest:requestData
+                       responseHandler:^(ATLHttpResponse *httpResponse) {
+                           [self readHeaders:httpResponse];
+                       }];
+}
+
+- (void)waitI:(NSDictionary *)params {
+    if ([params objectForKey:WAIT_FOR_CONTROL]) {
+        NSString * waitExpectedReason = [params objectForKey:WAIT_FOR_CONTROL][0];
+        [ATLUtil debug:@"wait for %@", waitExpectedReason];
+        NSString * endReason = [self.waitControlQueue dequeue];
+        [ATLUtil debug:@"wait ended due to %@", endReason];
+    }
+
+    if ([params objectForKey:WAIT_FOR_SLEEP]) {
+        NSString * millisToSleepS = [params objectForKey:WAIT_FOR_SLEEP][0];
+        [ATLUtil debug:@"sleep for %@", millisToSleepS];
+
+        double secondsToSleep = [millisToSleepS intValue] / 1000;
+        [NSThread sleepForTimeInterval:secondsToSleep];
+
+        [ATLUtil debug:@"sleep ended"];
+    }
+}
 @end
