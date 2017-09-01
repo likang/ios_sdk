@@ -7,8 +7,28 @@
 //
 
 #import "ATAAdjustCommandExecutor.h"
+#import "Adjust.h"
+#import "ADJAdjustFactory.h"
+
+@interface ATAAdjustCommandExecutor ()
+
+@property (nonatomic, strong) NSMutableDictionary *savedConfigs;
+@property (nonatomic, strong) NSMutableDictionary *savedEvents;
+@property (nonatomic, copy) NSString *basePath;
+
+@end
 
 @implementation ATAAdjustCommandExecutor
+
+- (id)init {
+    self = [super init];
+    if (self == nil) return nil;
+
+    self.savedConfigs = [NSMutableDictionary dictionary];
+    self.savedEvents = [NSMutableDictionary dictionary];
+
+    return self;
+}
 
 - (void)executeCommand:(NSString *)className
             methodName:(NSString *)methodName
@@ -66,11 +86,59 @@
 }
 
 - (void)config:(NSDictionary *)parameters {
+    NSNumber * configNumber = [NSNumber numberWithInt:0];
 
+    if ([parameters objectForKey:@"configName"]) {
+        NSString * configName = [parameters objectForKey:@"configName"][0];
+        NSString *configNumberS = [configName substringFromIndex:[configName length] - 1];
+        configNumber = [NSNumber numberWithInt:[configNumberS intValue]];
+    }
+
+    ADJConfig * adjustConfig = nil;
+
+    if ([self.savedConfigs objectForKey:configNumber]) {
+        adjustConfig = [self.savedConfigs objectForKey:configNumber];
+    } else {
+        NSString * environment = [parameters objectForKey:@"environment"][0];
+        NSString * appToken = [parameters objectForKey:@"appToken"][0];
+
+        adjustConfig = [ADJConfig configWithAppToken:appToken environment:environment];
+        [self.savedConfigs setObject:adjustConfig forKey:configNumber];
+    }
+
+    if ([parameters objectForKey:@"logLevel"]) {
+        NSString * logLevelS = [parameters objectForKey:@"logLevel"][0];
+        ADJLogLevel logLevel = [ADJLogger logLevelFromString:logLevelS];
+        [adjustConfig setLogLevel:logLevel];
+    }
+/*
+    NSLog(@"parameters: %@", parameters);
+    for (NSString *key in parameters) {
+        NSLog(@"key: %@", key);
+        NSArray * values = [parameters objectForKey:key];
+        NSLog(@"values: %@", values);
+    }
+ */
 }
 
 - (void)start:(NSDictionary *)parameters {
+    [self config:parameters];
 
+    NSNumber * configNumber = [NSNumber numberWithInt:0];
+
+    if ([parameters objectForKey:@"configName"]) {
+        NSString * configName = [parameters objectForKey:@"configName"][0];
+        NSString *configNumberS = [configName substringFromIndex:[configName length] - 1];
+        configNumber = [NSNumber numberWithInt:[configNumberS intValue]];
+    }
+
+    ADJConfig * adjustConfig = [self.savedConfigs objectForKey:configNumber];
+
+    [adjustConfig setBasePath:self.basePath];
+
+    [Adjust appDidLaunch:adjustConfig];
+
+    [self.savedConfigs removeObjectForKey:[NSNumber numberWithInt:0]];
 }
 
 - (void)event:(NSDictionary *)parameters {
@@ -82,11 +150,11 @@
 }
 
 - (void)resume:(NSDictionary *)parameters {
-
+    [Adjust trackSubsessionStart];
 }
 
 - (void)pause:(NSDictionary *)parameters {
-
+    [Adjust trackSubsessionEnd];
 }
 
 - (void)setEnabled:(NSDictionary *)parameters {
@@ -146,10 +214,18 @@
 }
 
 - (void)testBegin:(NSDictionary *)parameters {
+    NSLog(@"testBegin parameters: %@", parameters);
 
+    if ([parameters objectForKey:@"basePath"]) {
+        self.basePath = [parameters objectForKey:@"basePath"][0];
+    }
+
+    [ADJAdjustFactory teardown:YES];
+    self.savedConfigs = [NSMutableDictionary dictionary];
+    self.savedEvents = [NSMutableDictionary dictionary];
 }
 
 - (void)testEnd:(NSDictionary *)parameters {
-
+    [ADJAdjustFactory teardown:YES];
 }
 @end

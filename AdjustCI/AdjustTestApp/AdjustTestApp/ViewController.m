@@ -10,9 +10,11 @@
 #import "Adjust.h"
 #import "ATLTestLibrary.h"
 #import "ATAAdjustCommandExecutor.h"
+#import "ADJAdjustFactory.h"
 
 @interface ViewController ()
 @property (nonatomic, strong) ATLTestLibrary * testLibrary;
+@property (nonatomic, strong) ATAAdjustCommandExecutor * adjustCommandExecutor;
 
 @end
 
@@ -22,9 +24,12 @@
     [super viewDidLoad];
     // Do any additional setup after loading the view, typically from a nib.
 
-    ATAAdjustCommandExecutor * adjustCommandExecutor = [[ATAAdjustCommandExecutor alloc] init];
+    self.adjustCommandExecutor = [[ATAAdjustCommandExecutor alloc] init];
+    NSString * baseUrl = @"http://127.0.0.1:8080";
+    [ADJAdjustFactory setTestingMode:baseUrl];
 
-    self.testLibrary = [ATLTestLibrary testLibraryWithBaseUrl:@"http://127.0.0.1:8080/" andCommandDelegate:adjustCommandExecutor];
+    self.testLibrary = [ATLTestLibrary testLibraryWithBaseUrl:baseUrl andCommandDelegate:self.adjustCommandExecutor];
+    [self.testLibrary setTests:@"current/Test_example"];
     [self startTestSession];
 }
 
