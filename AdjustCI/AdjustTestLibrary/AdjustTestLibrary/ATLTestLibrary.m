@@ -10,6 +10,8 @@
 #import "ATLUtil.h"
 #import "ATLUtilNetworking.h"
 #import "ATLConstants.h"
+#import "MKBlockingQueue.h"
+#import "ATLControlChannel.h"
 
 static const char * const kInternalQueueName     = "com.adjust.TestLibrary";
 
@@ -18,6 +20,8 @@ static const char * const kInternalQueueName     = "com.adjust.TestLibrary";
 @property (nonatomic, weak, nullable) NSObject<AdjustCommandDelegate> *commandDelegate;
 @property (nonatomic, strong) dispatch_queue_t internalQueue;
 @property (nonatomic, copy) NSString *currentBasePath;
+@property (nonatomic, strong) MKBlockingQueue *waitControlQueue;
+@property (nonatomic, strong) ATLControlChannel *controlChannel;
 
 @end
 
@@ -69,6 +73,11 @@ static NSURL * _baseUrl = nil;
 }
 
 - (void)clearTest {
+    if (self.controlChannel != nil) {
+        [self.controlChannel teardown];
+    }
+    self.waitControlQueue = nil;
+    self.controlChannel = nil;
 }
 
 - (void)resetTest {
@@ -78,6 +87,7 @@ static NSURL * _baseUrl = nil;
 }
 
 - (void)initTest {
+    self.waitControlQueue = [[MKBlockingQueue alloc] init];
     self.internalQueue = dispatch_queue_create(kInternalQueueName, DISPATCH_QUEUE_SERIAL);
 }
 
