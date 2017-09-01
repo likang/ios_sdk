@@ -42,13 +42,43 @@ static NSURL * _baseUrl = nil;
 }
 
 - (void)initTestSession:(NSString *)clientSdk {
-    self.internalQueue = dispatch_queue_create(kInternalQueueName, DISPATCH_QUEUE_SERIAL);
+    [self resetTestLibrary];
+
     [ATLUtil launchInQueue:self.internalQueue
                  selfInject:self
                       block:^(ATLTestLibrary * selfI) {
                           [selfI sendTestSessionI:clientSdk];
                       }];
     
+}
+
+- (void)resetTestLibrary {
+    [self teardown];
+
+    [self initTest];
+}
+
+- (void)teardown {
+    if (self.internalQueue != nil) {
+        [ATLUtil debug:@"cancel test library thread queue"];
+        dispatch_cancel(self.internalQueue);
+    }
+    self.internalQueue = nil;
+
+    [self clearTest];
+}
+
+- (void)clearTest {
+}
+
+- (void)resetTest {
+    [self clearTest];
+
+    [self initTest];
+}
+
+- (void)initTest {
+    self.internalQueue = dispatch_queue_create(kInternalQueueName, DISPATCH_QUEUE_SERIAL);
 }
 
 - (void)sendTestSessionI:(NSString *)clientSdk {
@@ -58,25 +88,29 @@ static NSURL * _baseUrl = nil;
     
     [ATLUtilNetworking sendPostRequest:requestData
                         responseHandler:^(ATLHttpResponse *httpResponse) {
-                            [self readHeadersI:httpResponse];
+                            [self readHeaders:httpResponse];
                         }];
 }
 
+- (void)readHeaders:(ATLHttpResponse *)httpResponse {
+    [ATLUtil launchInQueue:self.internalQueue
+                selfInject:self
+                     block:^(ATLTestLibrary * selfI) {
+                         [selfI readHeadersI:httpResponse];
+                     }];
+}
 - (void)readHeadersI:(ATLHttpResponse *)httpResponse {
+    [ATLUtil debug:@"readHeadersI"];
+    return;
+
     if (httpResponse.headerFields == nil) {
         [ATLUtil debug:@"headers null"];
         return;
     }
     
     if ([httpResponse.headerFields objectForKey:TEST_SESSION_END_HEADER]) {
-        // TODO add control channel
-        /*
-        if (controlChannel != null) {
-            controlChannel.teardown();
-        }
-        controlChannel = null;
-        debug("TestSessionEnd received");
-         */
+        [self teardown];
+        [ATLUtil debug:@"TestSessionEnd received"];
         return;
     }
     if ([httpResponse.headerFields objectForKey:BASE_PATH_HEADER]) {
@@ -85,6 +119,8 @@ static NSURL * _baseUrl = nil;
     if ([httpResponse.headerFields objectForKey:TEST_SCRIPT_HEADER]) {
         NSString * currentTest = httpResponse.headerFields[TEST_SCRIPT_HEADER][0];
         [ATLUtil debug:@"current test is %@", currentTest];
+
+        [self resetTest];
         // TODO add control channel
         /*
          if (controlChannel != null) {
@@ -93,11 +129,12 @@ static NSURL * _baseUrl = nil;
          controlChannel = new ControlChannel(this);
          */
         // List<TestCommand> testCommands = Arrays.asList(gson.fromJson(httpResponse.response, TestCommand[].class));
-        [self execTestCommandsI];
+        [self execTestCommandsI:httpResponse.jsonResponse];
     }
 }
 
-- (void)execTestCommandsI {
+- (void)execTestCommandsI:(NSDictionary *)jsonResponse {
+    [ATLUtil debug:@"execTestCommands"];
 }
 
 @end
