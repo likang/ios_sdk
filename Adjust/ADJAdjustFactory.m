@@ -34,10 +34,10 @@ static NSString * internalBaseUrl = @"https://app.adjust.com";
         return;
     }
 
-    [ADJAdjustFactory resetValues];
+    [ADJAdjustFactory resetAll];
 }
 
-+ (void)resetValues {
++ (void)resetAll {
     internalPackageHandler = nil;
     internalRequestHandler = nil;
     internalActivityHandler = nil;
@@ -234,6 +234,10 @@ static NSString * internalBaseUrl = @"https://app.adjust.com";
     internalBaseUrl = baseUrl;
 }
 
++ (void)setTestingMode{
+    [ADJAdjustFactory setTesting:YES];
+}
+
 + (void)teardown:(BOOL)deleteState {
     [Adjust teardown:deleteState];
 
@@ -242,6 +246,7 @@ static NSString * internalBaseUrl = @"https://app.adjust.com";
         [ADJPackageHandler deleteState];
     }
 
-    [ADJAdjustFactory resetValues];
+    [ADJAdjustFactory resetAll];
 }
+
 @end
