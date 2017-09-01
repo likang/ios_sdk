@@ -234,8 +234,9 @@ static NSString * internalBaseUrl = @"https://app.adjust.com";
     internalBaseUrl = baseUrl;
 }
 
-+ (void)setTestingMode{
++ (void)setTestingMode:(NSString *)baseUrl {
     [ADJAdjustFactory setTesting:YES];
+    [ADJAdjustFactory setBaseUrl:baseUrl];
 }
 
 + (void)teardown:(BOOL)deleteState {

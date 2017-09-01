@@ -58,7 +58,7 @@
 
 + (void)setTesting:(BOOL)testing;
 + (void)setBaseUrl:(NSString *)baseUrl;
-+ (void)setTestingMode;
++ (void)setTestingMode:(NSString *)baseUrl;
 
 + (void)teardown:(BOOL)deleteState;
 + (void)resetAll;
