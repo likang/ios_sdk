@@ -147,12 +147,13 @@
 
     if ([parameters objectForKey:@"appSecret"]) {
         NSArray *appSecretList = [parameters objectForKey:@"appSecret"];
-        NSUInteger part1 = [appSecretList[0] integerValue];
-        NSUInteger part2 = [appSecretList[1] integerValue];
-        NSUInteger part3 = [appSecretList[2] integerValue];
-        NSUInteger part4 = [appSecretList[3] integerValue];
+        NSUInteger secretId = [appSecretList[0] integerValue];
+        NSUInteger part1 = [appSecretList[1] integerValue];
+        NSUInteger part2 = [appSecretList[2] integerValue];
+        NSUInteger part3 = [appSecretList[3] integerValue];
+        NSUInteger part4 = [appSecretList[4] integerValue];
 
-        [adjustConfig setAppSecret:part1 info2:part2 info3:part3 info4:part4];
+        [adjustConfig setAppSecret:secretId info1:part1 info2:part2 info3:part3 info4:part4];
     }
 
     if ([parameters objectForKey:@"delayStart"]) {
