@@ -29,7 +29,7 @@
     [ADJAdjustFactory setTestingMode:baseUrl];
 
     self.testLibrary = [ATLTestLibrary testLibraryWithBaseUrl:baseUrl andCommandDelegate:self.adjustCommandExecutor];
-    [self.testLibrary setTests:@"current/Test_example"];
+    //[self.testLibrary setTests:@"current/Test_example"];
     [self startTestSession];
 }
 
