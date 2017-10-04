@@ -139,8 +139,16 @@ startsSending:(BOOL)startsSending
         return;
     }
 
+    NSURL *url;
+    if (selfI.basePath != nil) {
+        NSString * sUrl = [ADJAdjustFactory baseUrl];
+        url = [NSURL URLWithString:[NSString stringWithFormat:@"%@%@", sUrl, selfI.basePath]];
+    } else {
+        url = [NSURL URLWithString:[ADJAdjustFactory baseUrl]];
+    }
+
     dispatch_block_t work = ^{
-        [ADJUtil sendPostRequest:selfI.baseUrl
+        [ADJUtil sendPostRequest:url
                        queueSize:queueSize - 1
               prefixErrorMessage:sdkClickPackage.failureMessage
               suffixErrorMessage:@"Will retry later"
