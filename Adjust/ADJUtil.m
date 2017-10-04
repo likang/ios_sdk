@@ -632,9 +632,13 @@ responseDataHandler:(void (^)(ADJResponseData *responseData))responseDataHandler
 
 + (NSMutableURLRequest *)requestForGetPackage:(ADJActivityPackage *)activityPackage
                                        baseUrl:(NSURL *)baseUrl{
+    NSURL * urlWithPath = [baseUrl URLByAppendingPathComponent:activityPackage.path];
+    NSURLComponents *components = [[NSURLComponents alloc] initWithURL:urlWithPath resolvingAgainstBaseURL:NO];
+
     NSString *parameters = [ADJUtil queryString:activityPackage.parameters];
-    NSString *relativePath = [NSString stringWithFormat:@"%@?%@", activityPackage.path, parameters];
-    NSURL *url = [NSURL URLWithString:relativePath relativeToURL:baseUrl];
+    [components setQuery:parameters];
+
+    NSURL *url = [components URL];
 
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
     request.timeoutInterval = kRequestTimeout;
