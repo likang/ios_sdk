@@ -41,6 +41,9 @@
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
 }
+- (IBAction)restartTestClick:(UIButton *)sender {
+    [self startTestSession];
+}
 
 
 @end
